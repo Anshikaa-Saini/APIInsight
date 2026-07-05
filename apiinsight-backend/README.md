@@ -26,7 +26,7 @@ npm test
 
 Tests use `mongodb-memory-server`, so no real database is required to run them.
 
-## Endpoints (Milestone 1)
+## Endpoints (Milestone 1: Auth)
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -34,6 +34,39 @@ Tests use `mongodb-memory-server`, so no real database is required to run them.
 | POST | `/api/auth/register` | No | Register a new user |
 | POST | `/api/auth/login` | No | Login, returns JWT |
 | GET | `/api/auth/me` | Yes | Get current logged-in user |
+
+## Endpoints (Milestone 2: Spec Ingestion)
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/projects/upload-file` | Yes | Upload a Swagger/OpenAPI file (`specFile` field, .json/.yaml/.yml) |
+| POST | `/api/projects/upload-url` | Yes | Submit a Swagger/OpenAPI spec URL (`{ "url": "..." }`) |
+| GET | `/api/projects` | Yes | List all projects for the logged-in user |
+| GET | `/api/projects/:projectId` | Yes | Get a single project |
+| DELETE | `/api/projects/:projectId` | Yes | Delete a project and its endpoints |
+| GET | `/api/projects/:projectId/endpoints` | Yes | List parsed endpoints for a project |
+| GET | `/api/endpoints/:endpointId` | Yes | Get a single endpoint's detail |
+
+### How spec parsing works
+
+1. `POST /api/projects/upload-file` or `/upload-url` creates a `Project` document with `status: "processing"`.
+2. The raw spec is handed to `specParser.service.js`, which uses **Swagger Parser**
+   (`SwaggerParser.validate()`) to both validate the spec against the OpenAPI/Swagger
+   schema *and* dereference all `$ref` pointers in one call.
+3. The dereferenced spec's `paths` object is flattened into one `Endpoint` document
+   per (path, method) pair — each with its parameters, request body schema, and
+   response definitions already resolved (no `$ref` chasing needed later).
+4. On success, the `Project` is marked `"parsed"` with an `endpointCount`. On failure
+   (invalid spec, unreachable URL, bad JSON/YAML), it's marked `"failed"` with a
+   human-readable `failureReason` — the project row still shows up in the UI so the
+   failure is visible, instead of just returning an error and losing the attempt.
+
+Try it with the sample spec in `tests/fixtures/sample-petstore.yaml`:
+```bash
+curl -X POST http://localhost:5000/api/projects/upload-file \
+  -H "Authorization: Bearer <your-token>" \
+  -F "specFile=@tests/fixtures/sample-petstore.yaml"
+```
 
 ### Register
 ```

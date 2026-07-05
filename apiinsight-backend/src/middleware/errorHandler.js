@@ -22,6 +22,18 @@ function errorHandler(err, req, res, next) {
       .join(', ');
   }
 
+  // Invalid ObjectId in a route param (e.g. GET /api/projects/not-a-real-id)
+  if (err.name === 'CastError') {
+    statusCode = 400;
+    message = `Invalid ${err.path}: ${err.value}`;
+  }
+
+  // Multer errors (file too large, wrong field name, etc.)
+  if (err.name === 'MulterError') {
+    statusCode = 400;
+    message = err.message;
+  }
+
   if (!(err instanceof ApiError) && statusCode === 500) {
     // eslint-disable-next-line no-console
     console.error(err); // log unexpected/programmer errors for debugging
