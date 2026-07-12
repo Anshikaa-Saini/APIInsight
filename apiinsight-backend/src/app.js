@@ -7,6 +7,7 @@ const { clientOrigin } = require('./config/env');
 const authRoutes = require('./routes/auth.routes');
 const projectRoutes = require('./routes/project.routes');
 const endpointRoutes = require('./routes/endpoint.routes');
+const testCaseRoutes = require('./routes/testcase.routes');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/endpoints', endpointRoutes);
+app.use('/api/testcases', testCaseRoutes);
 
 // Unknown route handler
 app.use((req, res) => {

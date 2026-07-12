@@ -42,7 +42,7 @@ async function uploadSpecUrl({ ownerId, url }) {
  */
 async function finalizeProjectFromSpec(project, parseFn) {
   try {
-    const { title, version, endpoints } = await parseFn();
+    const { title, version, baseUrl, endpoints } = await parseFn();
 
     const endpointDocs =
       endpoints.length > 0
@@ -51,6 +51,7 @@ async function finalizeProjectFromSpec(project, parseFn) {
 
     project.name = title || project.name;
     project.version = version;
+    project.baseUrl = baseUrl;
     project.status = 'parsed';
     project.endpointCount = endpointDocs.length;
     await project.save();
@@ -82,10 +83,21 @@ async function deleteProject(projectId, ownerId) {
   await project.deleteOne();
 }
 
+// Lets the user set/override the target base URL - needed for specs that
+// don't declare a usable `servers`/`host` block, or to point at a
+// different environment (staging vs prod) than what the spec says.
+async function updateBaseUrl(projectId, ownerId, baseUrl) {
+  const project = await getOwnedProject(projectId, ownerId);
+  project.baseUrl = baseUrl;
+  await project.save();
+  return project;
+}
+
 module.exports = {
   uploadSpecFile,
   uploadSpecUrl,
   listProjects,
   getOwnedProject,
   deleteProject,
+  updateBaseUrl,
 };

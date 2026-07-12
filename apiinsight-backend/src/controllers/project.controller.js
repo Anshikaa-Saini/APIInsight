@@ -42,4 +42,20 @@ const deleteProject = asyncHandler(async (req, res) => {
   sendSuccess(res, 200, null, 'Project deleted');
 });
 
-module.exports = { uploadFile, uploadUrl, listProjects, getProject, deleteProject };
+const updateBaseUrl = asyncHandler(async (req, res) => {
+  const project = await projectService.updateBaseUrl(
+    req.params.projectId,
+    req.user._id,
+    req.body.baseUrl
+  );
+  sendSuccess(res, 200, { project }, 'Base URL updated');
+});
+
+module.exports = {
+  uploadFile,
+  uploadUrl,
+  listProjects,
+  getProject,
+  deleteProject,
+  updateBaseUrl,
+};

@@ -44,8 +44,41 @@ async function validateAndExtract(specSource) {
   return {
     title: api.info?.title,
     version: api.info?.version,
+    baseUrl: extractBaseUrl(api, specSource),
     endpoints: extractEndpoints(api),
   };
+}
+
+/**
+ * Best-effort extraction of a base URL to actually send test requests to.
+ * Returns null if the spec doesn't declare one - the executor requires the
+ * user to set it manually in that case, rather than guessing.
+ */
+function extractBaseUrl(api, specSource) {
+  // OpenAPI 3.x
+  if (Array.isArray(api.servers) && api.servers.length > 0 && api.servers[0].url) {
+    return resolveServerUrl(api.servers[0].url, specSource);
+  }
+
+  // Swagger 2.0
+  if (api.host) {
+    const scheme = (api.schemes && api.schemes[0]) || 'https';
+    const basePath = api.basePath || '';
+    return `${scheme}://${api.host}${basePath}`;
+  }
+
+  return null;
+}
+
+// OpenAPI 3 allows a relative server URL (e.g. "/v2"). If we fetched the
+// spec from a URL, resolve it against that URL's origin; otherwise there's
+// no origin to resolve against, so just return it as-is.
+function resolveServerUrl(rawUrl, specSource) {
+  if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
+  if (typeof specSource === 'string' && /^https?:\/\//i.test(specSource)) {
+    return new URL(rawUrl, specSource).toString().replace(/\/$/, '');
+  }
+  return rawUrl;
 }
 
 /**

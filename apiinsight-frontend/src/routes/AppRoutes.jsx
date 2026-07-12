@@ -4,6 +4,7 @@ import RegisterPage from '../pages/RegisterPage';
 import DashboardPage from '../pages/DashboardPage';
 import ProjectDetailPage from '../pages/ProjectDetailPage';
 import EndpointDetailPage from '../pages/EndpointDetailPage';
+import ReportPage from '../pages/ReportPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 
@@ -17,6 +18,7 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
+        <Route path="/projects/:projectId/report" element={<ReportPage />} />
         <Route path="/endpoints/:endpointId" element={<EndpointDetailPage />} />
       </Route>
 

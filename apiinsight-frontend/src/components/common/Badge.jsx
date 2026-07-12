@@ -9,6 +9,18 @@ const COLOR_MAP = {
   parsed: 'bg-green-100 text-green-700',
   processing: 'bg-amber-100 text-amber-700',
   failed: 'bg-red-100 text-red-700',
+  // Test case categories
+  positive: 'bg-green-100 text-green-700',
+  negative: 'bg-red-100 text-red-700',
+  edge: 'bg-amber-100 text-amber-700',
+  security: 'bg-purple-100 text-purple-700',
+  // Execution results ('failed' reused from project status above)
+  passed: 'bg-green-100 text-green-700',
+  // Report risk levels
+  Low: 'bg-green-100 text-green-700',
+  Medium: 'bg-amber-100 text-amber-700',
+  High: 'bg-orange-100 text-orange-700',
+  Critical: 'bg-red-100 text-red-700',
 };
 
 const DEFAULT_COLOR = 'bg-slate-100 text-slate-700';
