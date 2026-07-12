@@ -60,13 +60,45 @@ describe('generateTestCasesForEndpoint', () => {
     );
   });
 
-  it('throws when the AI JSON does not match the expected schema', async () => {
+  it('throws when every test case in the AI response is malformed', async () => {
     // Missing required fields like expectedStatusCode
     const fakeChat = jest.fn().mockResolvedValue(JSON.stringify({ testCases: [{ title: 'x' }] }));
 
     await expect(generateTestCasesForEndpoint(sampleEndpoint, fakeChat)).rejects.toThrow(
-      /did not match expected schema/
+      /did not contain any valid test cases/
     );
+  });
+
+  it('keeps valid test cases and discards a malformed one, instead of failing the whole batch', async () => {
+    // Reproduces a real Groq/Llama response shape seen in production: one
+    // test case nested query/pathParams/body inside "headers" (wrong) and
+    // was missing expectedStatusCode/expectedBehaviour entirely.
+    const fakeChat = jest.fn().mockResolvedValue(
+      JSON.stringify({
+        testCases: [
+          {
+            title: 'Creates a pet with a valid body',
+            category: 'positive',
+            requestPayload: { body: { name: 'Rex' } },
+            expectedStatusCode: 201,
+            expectedBehaviour: 'The pet is created and returned in the response',
+          },
+          {
+            title: 'Malformed test case from a weaker model',
+            category: 'negative',
+            requestPayload: {
+              headers: { query: {}, pathParams: {}, body: {} }, // wrongly nested
+            },
+            // expectedStatusCode and expectedBehaviour missing entirely
+          },
+        ],
+      })
+    );
+
+    const testCases = await generateTestCasesForEndpoint(sampleEndpoint, fakeChat);
+
+    expect(testCases).toHaveLength(1);
+    expect(testCases[0].title).toBe('Creates a pet with a valid body');
   });
 
   it('throws when the AI returns an empty test case list', async () => {
