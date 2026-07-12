@@ -4,27 +4,12 @@ Upload an OpenAPI/Swagger spec, let AI generate test cases for every endpoint, r
 against the real API, and get back a risk score, plain-English summary, and concrete
 developer suggestions — all in one flow.
 
-**Live demo:** _[add your deployed frontend URL here]_
-**Demo login:** _[optional — add a seeded demo email/password so recruiters don't have to register]_
+**Live demo:** [api-insight.vercel.app](https://api-insight.vercel.app)
+**Demo login:** email: hello@gmail.com, password: 123456
 
----
+## Sample
 
-## Why this project
-
-Most CRUD-app portfolio projects only prove you can build forms over a database. This one
-also involves:
-- Parsing and validating third-party file formats (OpenAPI/Swagger, JSON *and* YAML)
-- A real third-party AI integration — prompt design, structured JSON output, and
-  schema-validating the AI's response before it ever touches the database
-- An execution engine that makes real outbound HTTP calls to arbitrary APIs and has to
-  handle every failure mode (wrong status, no response at all, oversized response)
-- A scoring algorithm that's deliberately **not** AI-generated, so it stays explainable
-  and reproducible — AI is only used for the narrative on top of it
-
-## Screenshots
-
-_[Add 3–4 screenshots or a short GIF here: dashboard → endpoint with generated test
-cases → execution results → risk report. This is the first thing a recruiter looks at.]_
+ezgif.com-speed.gif
 
 ## Architecture
 
@@ -77,17 +62,17 @@ suggestions on top of that score.
 
 ## Tech stack
 
-| Layer | Choice |
-|---|---|
-| Frontend | React, Vite, Tailwind CSS v4 |
-| Backend | Node.js, Express |
-| Database | MongoDB (Mongoose) |
-| Auth | JWT |
-| Spec parsing | Swagger Parser (validates + dereferences OpenAPI/Swagger 2 & 3) |
-| AI | OpenAI SDK (works with OpenAI or Groq's free, OpenAI-compatible API) |
-| HTTP execution | Axios |
-| Testing | Jest, Supertest, mongodb-memory-server |
-| Deployment | Docker + docker-compose (see below for hosted deployment) |
+| Layer          | Choice                                                                                   |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| Frontend       | React, Vite, Tailwind CSS v4                                                             |
+| Backend        | Node.js, Express                                                                         |
+| Database       | MongoDB (Mongoose)                                                                       |
+| Auth           | JWT                                                                                      |
+| Spec parsing   | Swagger Parser (validates + dereferences OpenAPI/Swagger 2 & 3)                          |
+| AI             | OpenAI SDK — works with OpenAI or Groq's free, OpenAI-compatible API                     |
+| HTTP execution | Axios                                                                                    |
+| Testing        | Jest, Supertest, mongodb-memory-server                                                   |
+| Deployment     | Render (backend), Vercel (frontend), MongoDB Atlas — also fully Dockerized for local use |
 
 ## Features
 
@@ -105,29 +90,32 @@ suggestions on top of that score.
 - **AI reports** — plain-English summary and developer suggestions generated from the
   score and failure data, with full report history per project
 
-## Design decisions (things I'd want to explain in an interview)
+## Engineering highlights
 
-- **The risk score is not AI-generated.** It's a simple, explainable formula so the
-  number is reproducible — AI only writes the narrative on top of it.
-- **The AI provider is swappable via config**, not hardcoded to OpenAI — the same client
-  code works against Groq's free tier by changing one env var, which is how I developed
-  and tested this without needing to pay for API credits.
-- **Execution never throws on a 4xx/5xx.** Those are valid results to record. Only a
-  request that got no response at all (timeout, DNS failure) is treated as a failure.
-- **Batch test runs are sequential, not parallel** — this tool's job is to test someone
-  else's API responsibly, not hammer it with concurrent requests.
-- **Ownership checks return 404, not 403**, for resources that belong to another user —
-  doesn't leak whether the resource exists at all.
+- Risk score is computed with a deterministic formula, not by AI — the number is always
+  reproducible; AI is only used for the written summary and suggestions on top of it.
+- AI provider is swappable via config (`AI_BASE_URL`) rather than hardcoded to OpenAI —
+  the same client and prompt code runs against Groq's OpenAI-compatible API without any
+  business logic changes.
+- AI responses are schema-validated per test case, not all-or-nothing — a single
+  malformed item from the model doesn't discard an otherwise valid batch.
+- Execution treats any HTTP response (including 4xx/5xx) as a valid result to record;
+  only a request that never got a response at all (timeout, DNS failure) counts as a
+  failure.
+- Batch test runs execute sequentially, not in parallel, since the target is often a
+  third-party API that shouldn't be hit with concurrent load.
+- Ownership checks return 404 (not 403) for resources belonging to another user, so a
+  request can't be used to confirm whether a resource exists.
 
-## Running locally
+## Getting started
 
-**Prerequisites:** Node 20+, MongoDB running locally (or Docker), an OpenAI or
-[Groq](https://console.groq.com) API key (Groq's free tier works and needs no card).
+**Prerequisites:** Node 20+, MongoDB (local or Docker), an OpenAI or
+[Groq](https://console.groq.com) API key (Groq's free tier requires no card).
 
 ```bash
 # Backend
 cd apiinsight-backend
-cp .env.example .env      # fill in MONGO_URI, JWT_SECRET, OPENAI_API_KEY (see comments in the file)
+cp .env.example .env      # fill in MONGO_URI, JWT_SECRET, OPENAI_API_KEY
 npm install
 npm run dev                # http://localhost:5000
 
@@ -138,11 +126,12 @@ npm install
 npm run dev                # http://localhost:5173
 ```
 
-## Running with Docker
+### With Docker
 
 ```bash
 docker-compose up --build
 ```
+
 Spins up MongoDB, the backend (port 5000), and the frontend (port 5173) together.
 
 ## Testing
@@ -151,19 +140,20 @@ Spins up MongoDB, the backend (port 5000), and the frontend (port 5173) together
 cd apiinsight-backend
 npm test
 ```
-~40 tests across auth, spec parsing/ownership, AI test generation, execution, risk
-scoring, and report generation. AI and HTTP calls are mocked/dependency-injected in
-tests, so the suite runs without real API keys or hitting real networks — except
-`mongodb-memory-server`, which needs internet access on its first run to download the
-MongoDB binary (cached after that).
 
-## Folder structure
+60 tests across auth, spec parsing/ownership, AI test generation, execution, risk
+scoring, and report generation. AI and HTTP calls are mocked/dependency-injected, so the
+suite runs without real API keys or network access — except `mongodb-memory-server`,
+which needs internet on its first run to download the MongoDB binary (cached after that).
+
+## Project structure
 
 ```
 apiinsight-backend/    # Node.js + Express + MongoDB + JWT + Swagger Parser + AI
 apiinsight-frontend/   # React + Vite + Tailwind
 docker-compose.yml     # spins up mongo + backend + frontend together
 ```
+
 See each service's own README for endpoint-level detail.
 
 ## License
