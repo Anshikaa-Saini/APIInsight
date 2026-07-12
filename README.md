@@ -5,11 +5,12 @@ against the real API, and get back a risk score, plain-English summary, and conc
 developer suggestions — all in one flow.
 
 **Live demo:** [api-insight.vercel.app](https://api-insight.vercel.app)
+
 **Demo login:** email: hello@gmail.com, password: 123456
 
 ## Sample
 
-ezgif.com-speed.gif
+![APIInsight demo](./ezgif.com-speed.gif)
 
 ## Architecture
 
